@@ -87,11 +87,13 @@ void NodeDock::update_lists() {
 	connections->update_tree();
 }
 
-void NodeDock::set_node(Node *p_node) {
-	connections->set_node(p_node);
-	groups->set_current(p_node);
+void NodeDock::set_selection(const Vector<Node *> &multi_nodes) {
 
-	if (p_node) {
+	connections->set_selection(multi_nodes);
+	groups->set_selection(multi_nodes);
+
+	/* !TODO! move this ui bullshit somewhere else
+	if (multi_nodes) {
 		if (connections_button->is_pressed()) {
 			connections->show();
 		} else {
@@ -106,6 +108,7 @@ void NodeDock::set_node(Node *p_node) {
 		mode_hb->hide();
 		select_a_node->show();
 	}
+	*/
 }
 
 NodeDock::NodeDock() {

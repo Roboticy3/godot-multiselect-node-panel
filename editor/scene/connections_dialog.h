@@ -230,7 +230,7 @@ class ConnectionsDock : public VBoxContainer {
 		SLOT_MENU_DISCONNECT,
 	};
 
-	Node *selected_node = nullptr;
+	Node* node;
 	ConnectionsDockTree *tree = nullptr;
 
 	ConfirmationDialog *disconnect_all_dialog = nullptr;
@@ -273,7 +273,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_node(Node *p_node);
+	void set_selection(const Vector<Node *> & multi_nodes);
 	void update_tree();
 
 	ConnectionsDock();

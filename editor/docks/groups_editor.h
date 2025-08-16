@@ -52,7 +52,7 @@ class GroupsEditor : public VBoxContainer {
 	bool groups_dirty = false;
 	bool update_groups_and_tree_queued = false;
 
-	Node *node = nullptr;
+	Vector<Node *> &multi_nodes;
 	Node *scene_root_node = nullptr;
 	SceneTree *scene_tree = nullptr;
 
@@ -134,7 +134,7 @@ public:
 		CONVERT_GROUP,
 	};
 
-	void set_current(Node *p_node);
+	void set_selection(Node *p_node);
 
 	GroupsEditor();
 };

@@ -305,13 +305,13 @@ void GroupsEditor::_cache_scene_groups(const ObjectID &p_id) {
 	}
 }
 
-void GroupsEditor::set_current(Node *p_node) {
-	if (node == p_node) {
+void GroupsEditor::set_selection(const Vector<Node *> &multi_nodes) {
+	if (multi_nodes == this->multi_nodes) {
 		return;
 	}
-	node = p_node;
+	this->multi_nodes = multi_nodes;
 
-	if (!node) {
+	if (this->multi_nodes.is_empty()) {
 		return;
 	}
 

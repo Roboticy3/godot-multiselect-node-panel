@@ -954,7 +954,7 @@ void ConnectionsDock::_filter_changed(const String &p_text) {
  */
 void ConnectionsDock::_make_or_edit_connection() {
 	NodePath dst_path = connect_dialog->get_dst_path();
-	Node *target = selected_node->get_node(dst_path);
+	Node *target = node->get_node(dst_path);
 	ERR_FAIL_NULL(target);
 
 	ConnectDialog::ConnectionData cd;
@@ -1088,14 +1088,14 @@ void ConnectionsDock::_connect(const ConnectDialog::ConnectionData &p_cd) {
  * Break single connection w/ undo-redo functionality.
  */
 void ConnectionsDock::_disconnect(const ConnectDialog::ConnectionData &p_cd) {
-	ERR_FAIL_COND(p_cd.source != selected_node); // Shouldn't happen but... Bugcheck.
+	ERR_FAIL_COND(p_cd.source != node); // Shouldn't happen but... Bugcheck.
 
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 	undo_redo->create_action(vformat(TTR("Disconnect '%s' from '%s'"), p_cd.signal, p_cd.method));
 
 	Callable callable = p_cd.get_callable();
-	undo_redo->add_do_method(selected_node, "disconnect", p_cd.signal, callable);
-	undo_redo->add_undo_method(selected_node, "connect", p_cd.signal, callable, p_cd.flags);
+	undo_redo->add_do_method(node, "disconnect", p_cd.signal, callable);
+	undo_redo->add_undo_method(node, "connect", p_cd.signal, callable, p_cd.flags);
 	undo_redo->add_do_method(this, "update_tree");
 	undo_redo->add_undo_method(this, "update_tree");
 	undo_redo->add_do_method(SceneTreeDock::get_singleton()->get_tree_editor(), "update_tree"); // To force redraw of scene tree.
@@ -1123,8 +1123,8 @@ void ConnectionsDock::_disconnect_all() {
 		Connection connection = child->get_metadata(0);
 		if (!_is_connection_inherited(connection)) {
 			ConnectDialog::ConnectionData cd = connection;
-			undo_redo->add_do_method(selected_node, "disconnect", cd.signal, cd.get_callable());
-			undo_redo->add_undo_method(selected_node, "connect", cd.signal, cd.get_callable(), cd.flags);
+			undo_redo->add_do_method(node, "disconnect", cd.signal, cd.get_callable());
+			undo_redo->add_undo_method(node, "connect", cd.signal, cd.get_callable(), cd.flags);
 		}
 		child = child->get_next();
 	}
@@ -1193,13 +1193,13 @@ void ConnectionsDock::_open_connection_dialog(TreeItem &p_item) {
 	const StringName signal_name = sinfo["name"];
 	const PackedStringArray signal_args = sinfo["args"];
 
-	Node *dst_node = selected_node->get_owner() ? selected_node->get_owner() : selected_node;
+	Node *dst_node = node->get_owner() ? node->get_owner() : node;
 	if (!dst_node || dst_node->get_script().is_null()) {
 		dst_node = _find_first_script(get_tree()->get_edited_scene_root(), get_tree()->get_edited_scene_root());
 	}
 
 	ConnectDialog::ConnectionData cd;
-	cd.source = selected_node;
+	cd.source = node;
 	cd.signal = signal_name;
 	cd.target = dst_node;
 	cd.method = ConnectDialog::generate_method_callback_name(cd.source, signal_name, cd.target);
@@ -1241,7 +1241,7 @@ void ConnectionsDock::_go_to_method(TreeItem &p_item) {
 
 	Connection connection = p_item.get_metadata(0);
 	ConnectDialog::ConnectionData cd = connection;
-	ERR_FAIL_COND(cd.source != selected_node); // Shouldn't happen but... bugcheck.
+	ERR_FAIL_COND(cd.source != node); // Shouldn't happen but... bugcheck.
 
 	if (!cd.target) {
 		return;
@@ -1479,8 +1479,12 @@ void ConnectionsDock::_bind_methods() {
 	ClassDB::bind_method("update_tree", &ConnectionsDock::update_tree);
 }
 
-void ConnectionsDock::set_node(Node *p_node) {
-	selected_node = p_node;
+void ConnectionsDock::set_selection(const Vector<Node *> &multi_nodes) {
+	if (multi_nodes.is_empty()) {
+		this->node = nullptr;
+	} else {
+		this->node = multi_nodes[0];
+	}
 	update_tree();
 }
 
@@ -1491,15 +1495,15 @@ void ConnectionsDock::update_tree() {
 	}
 	tree->clear();
 
-	if (!selected_node) {
+	if (!node) {
 		return;
 	}
 
 	TreeItem *root = tree->create_item();
 	DocTools *doc_data = EditorHelp::get_doc_data();
 	EditorData &editor_data = EditorNode::get_editor_data();
-	StringName native_base = selected_node->get_class();
-	Ref<Script> script_base = selected_node->get_script();
+	StringName native_base = node->get_class();
+	Ref<Script> script_base = node->get_script();
 
 	while (native_base != StringName()) {
 		String class_name;
@@ -1613,7 +1617,7 @@ void ConnectionsDock::update_tree() {
 
 			// List existing connections.
 			List<Object::Connection> existing_connections;
-			selected_node->get_signal_connection_list(signal_name, &existing_connections);
+			node->get_signal_connection_list(signal_name, &existing_connections);
 
 			for (const Object::Connection &F : existing_connections) {
 				Connection connection = F;
@@ -1627,7 +1631,7 @@ void ConnectionsDock::update_tree() {
 					continue;
 				}
 
-				String path = String(selected_node->get_path_to(target)) + " :: " + cd.method + "()";
+				String path = String(node->get_path_to(target)) + " :: " + cd.method + "()";
 				if (cd.flags & CONNECT_DEFERRED) {
 					path += " (deferred)";
 				}
